@@ -16,11 +16,20 @@ void spi_init() {
     gpio_pin_enable(11);
 }
 
-void spi_send_recv(u8 chip_select, u8 *sbuffer, u8 *rbuffer, u32 size) {
-    REGS_SPI0->data_length = size;
+void spi_chip_select (u8 chip_select) {
     REGS_SPI0->cs = (REGS_SPI0->cs & ~CS_CS) | (chip_select << CS_CS__SHIFT) |
         CS_CLEAR_RX | CS_CLEAR_TX | CS_TA;
-    
+}
+
+void spi_send_recv(u8 chip_select, u8 *sbuffer, u8 *rbuffer, u32 size) {
+    REGS_SPI0->data_length = size;
+
+    // Abfrage, ob CS_TA-bit nicht gesetzt ist (spi_chip_select noch nicht durchlaufen wurde)
+    if (0 == (REGS_SPI0->cs & CS_TA))
+    {
+        REGS_SPI0->cs = (REGS_SPI0->cs & ~CS_CS) | CS_CLEAR_RX | CS_CLEAR_TX | CS_TA;
+    }
+        
     u32 read_count = 0;
     u32 write_count = 0;
 
@@ -52,7 +61,6 @@ void spi_send_recv(u8 chip_select, u8 *sbuffer, u8 *rbuffer, u32 size) {
             printf("Left Over: %d\n", r);
         }
     }
-
     REGS_SPI0->cs = (REGS_SPI0->cs & ~CS_TA);
 }
 
