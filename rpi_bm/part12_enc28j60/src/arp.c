@@ -1,5 +1,7 @@
 #include "../include/enc28j60.h"
 #include "../include/mini_uart.h"
+#include "../include/printf.h"
+#include "../include/common.h"
 
 ENC_HandleTypeDef handle;
 
@@ -42,7 +44,7 @@ typedef struct {
 
 // MAC address to be assigned to the ENC28J60
 
-uint8_t myMAC[6] = { 0xc0, 0xff, 0xee, 0xc0, 0xff, 0xee };
+uint8_t myMAC[6] = { 0xb0, 0x07, 0x10, 0xad, 0xe5 };
 
 // Router MAC is not known to start with, and requires an ARP reply to find out
 
@@ -50,7 +52,7 @@ uint8_t routerMAC[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
 // IP address to be assigned to the ENC28J60
 
-uint8_t deviceIP[4] = { 10, 7, 3, 218 };
+uint8_t deviceIP[4] = { 10, 7, 3, 20 };
 
 // IP Address of the router, whose hardware address we will find using the ARP request
 
@@ -139,10 +141,10 @@ void SendArpPacket(uint8_t *targetIP, uint8_t *deviceMAC)
    // Send the packet
 
    if (ENC_RestoreTXBuffer(&handle, sizeof(ARP)) == 0) {
-      uart_send_string("Sending ARP request.");
+      printf("Sending ARP request.\n");
       
       
-      ENC_WriteBuffer((unsigned char *)&arpPacket, sizeof(ARP));
+      ENC_WriteBuffer((u8 *)&arpPacket, sizeof(ARP));
       handle.transmitLength = sizeof(ARP);
 
       ENC_Transmit(&handle);
@@ -155,7 +157,7 @@ void arp_test(void)
 
    SendArpPacket(routerIP, myMAC);
 
-   uart_send_string("Waiting for ARP response.");
+   printf("Waiting for ARP response.\n");
    
 
    while (1) {
@@ -170,17 +172,17 @@ void arp_test(void)
             // Success! We have found our router's MAC address
 
             memcpy(routerMAC, checkPacket->senderMAC, 6);
-            uart_send_string("Router MAC is ");
+            printf("Router MAC is ");
             uart_send(routerMAC[0]);
-            uart_send_string(":");
+            printf(":");
             uart_send(routerMAC[1]);
-            uart_send_string(":");
+            printf(":");
             uart_send(routerMAC[2]);
-            uart_send_string(":");
+            printf(":");
             uart_send(routerMAC[3]);
-            uart_send_string(":");
+            printf(":");
             uart_send(routerMAC[4]);
-            uart_send_string(":");
+            printf(":");
             uart_send(routerMAC[5]);
             uart_send('\n');
 
@@ -197,23 +199,23 @@ void init_network(void)
    handle.Init.ChecksumMode = ETH_CHECKSUM_BY_HARDWARE;
    handle.Init.InterruptEnableBits = EIE_LINKIE | EIE_PKTIE;
 
-   uart_send_string("Starting network up.");
+   printf("Starting network up.\n");
    
    if (!ENC_Start(&handle)) {
-      uart_send_string("Could not initialise network card.");
+      printf("Could not initialise network card.\n");
    } else {
-      uart_send_string("Setting MAC address to C0:FF:EE:C0:FF:EE.");
+      printf("Setting MAC address to B0:07:10:AD:E5.\n");
       
 
       ENC_SetMacAddr(&handle);
 
-      uart_send_string("Network card successfully initialised.");
+      printf("Network card successfully initialised.\n");
    }
    
 
-   uart_send_string("Waiting for ifup... ");
+   printf("Waiting for ifup...\n");
    while (!(handle.LinkStatus & PHSTAT2_LSTAT)) ENC_IRQHandler(&handle);
-   uart_send_string("done.");
+   printf("network is up and running.\n");
    
 
    // Re-enable global interrupts

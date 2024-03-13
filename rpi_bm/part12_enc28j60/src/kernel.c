@@ -66,9 +66,10 @@ void kernel_main() {
     init_network();
     arp_test();
 
-    printf("DONE!\n");
+    printf("ARP TEST DONE!\n");
 
     while(1) {
+        printf("Let's send your keyboard input!\n");
         uart_send(uart_recv());
     }
 }
