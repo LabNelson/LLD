@@ -48,25 +48,25 @@ void kernel_main() {
     timer_init();
 
 #if RPI_VERSION == 3
-    uart_send_string("\tBoard: Raspberry PI 3\n");
+    printf("\tBoard: Raspberry PI 3\n");
 #endif
 
 #if RPI_VERSION == 4
-    uart_send_string("\tBoard: Raspberry PI 4\n");
+    printf("\tBoard: Raspberry PI 4\n");
 #endif
 
-    uart_send_string("\nException Level: %d\n" & get_el());
+    printf("\nException Level: %d\n", get_el());
 
-    uart_send_string("Sleeping 200 ms...\n");
+    printf("Sleeping 200 ms...\n");
     timer_sleep(200);
 
-    uart_send_string("Initializing SPI...\n");
+    printf("Initializing SPI...\n");
     spi_init();
 
     init_network();
     arp_test();
 
-    uart_send_string("DONE!\n");
+    printf("DONE!\n");
 
     while(1) {
         uart_send(uart_recv());
