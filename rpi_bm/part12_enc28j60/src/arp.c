@@ -3,6 +3,9 @@
 #include "../include/printf.h"
 #include "../include/common.h"
 
+//debug
+#include "../include/timer.h"
+
 ENC_HandleTypeDef handle;
 
 // Structure for Ethernet header
@@ -44,7 +47,8 @@ typedef struct {
 
 // MAC address to be assigned to the ENC28J60
 
-uint8_t myMAC[6] = { 0xb0, 0x07, 0x10, 0xad, 0xe5 };
+//uint8_t myMAC[6] = { 0xb0, 0x07, 0x10, 0xad, 0xe5, 0x55 };
+uint8_t myMAC[6] = { 0xc0, 0xff, 0xee, 0xc0, 0xff, 0xee };
 
 // Router MAC is not known to start with, and requires an ARP reply to find out
 
@@ -154,7 +158,7 @@ void SendArpPacket(uint8_t *targetIP, uint8_t *deviceMAC)
 void arp_test(void)
 {
    ARP *checkPacket;
-
+   
    SendArpPacket(routerIP, myMAC);
 
    printf("Waiting for ARP response.\n");
@@ -172,20 +176,7 @@ void arp_test(void)
             // Success! We have found our router's MAC address
 
             memcpy(routerMAC, checkPacket->senderMAC, 6);
-            printf("Router MAC is ");
-            uart_send(routerMAC[0]);
-            printf(":");
-            uart_send(routerMAC[1]);
-            printf(":");
-            uart_send(routerMAC[2]);
-            printf(":");
-            uart_send(routerMAC[3]);
-            printf(":");
-            uart_send(routerMAC[4]);
-            printf(":");
-            uart_send(routerMAC[5]);
-            uart_send('\n');
-
+            printf("Router-MAC is %x:%x:%x:%x:%x:%x \n", routerMAC[0], routerMAC[1], routerMAC[2], routerMAC[3], routerMAC[4], routerMAC[5]);
             break;
          }
       }
@@ -204,7 +195,7 @@ void init_network(void)
    if (!ENC_Start(&handle)) {
       printf("Could not initialise network card.\n");
    } else {
-      printf("Setting MAC address to B0:07:10:AD:E5.\n");
+      printf("Setting MAC address to C0:FF:EE:C0:FF:EE.\n");
       
 
       ENC_SetMacAddr(&handle);

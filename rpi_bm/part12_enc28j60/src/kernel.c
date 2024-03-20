@@ -7,6 +7,8 @@
 #include "i2c.h"
 #include "spi.h"
 
+#include "../include/enc28j60.h"
+
 void putc(void *p, char c) {
     if (c == '\n') {
         uart_send('\r');
@@ -15,7 +17,7 @@ void putc(void *p, char c) {
     uart_send(c);
 }
 
-unsigned long HAL_GetTick(void) {
+u32 HAL_GetTick(void) {
     unsigned int hi = REGS_TIMER->counter_hi;
     unsigned int lo = REGS_TIMER->counter_lo;
 
@@ -44,6 +46,7 @@ void kernel_main() {
 
     irq_init_vectors();
     enable_interrupt_controller();
+    irq_barrier();
     irq_enable();
     timer_init();
 
@@ -62,14 +65,26 @@ void kernel_main() {
 
     printf("Initializing SPI...\n");
     spi_init();
+    /*
+    uint8_t sendcode, receivecode;
+    uint8_t *send, *receive;
+    send = &sendcode;
+    receive = &receivecode;
+    *send = 0xFF;
+    spi_send_recv(0,send,receive,1);
+    printf("SPI loopback: %d \n",receivecode);
+*/
 
     init_network();
-    arp_test();
-
+    for (u8 i = 0; i < 10; i++)
+    {
+        arp_test();
+        timer_sleep(100);
+    }
     printf("ARP TEST DONE!\n");
 
+    printf("Let's send your keyboard input!\n");
     while(1) {
-        printf("Let's send your keyboard input!\n");
         uart_send(uart_recv());
     }
 }

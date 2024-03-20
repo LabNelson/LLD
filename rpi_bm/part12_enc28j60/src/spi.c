@@ -8,7 +8,9 @@
 
 void spi_init() {
     gpio_pin_set_func(7, GFAlt0); //CS1
-    gpio_pin_set_func(8, GFAlt0); //CS0  -> CS
+    //gpio_pin_set_func(8, GFOutput);
+    gpio_initOutputPinWithPullNone(8);  //CS0
+    //gpio_pin_set_func(8, GFAlt0); //CS0  -> CS
     gpio_pin_set_func(9, GFAlt0); //MISO -> SO
     gpio_pin_set_func(10, GFAlt0);//MOSI -> SI
     gpio_pin_set_func(11, GFAlt0);//SCLK -> SCK
@@ -20,11 +22,15 @@ void spi_init() {
 }
 
 void spi_chip_select (u8 chip_select) {
-    REGS_SPI0->cs = (REGS_SPI0->cs & ~CS_CS) | (chip_select << CS_CS__SHIFT) |
+    gpio_setPinOutputBool(8, chip_select);
+    /*REGS_SPI0->cs = (REGS_SPI0->cs & ~CS_CS) | (chip_select << CS_CS__SHIFT) |
         CS_CLEAR_RX | CS_CLEAR_TX | CS_TA;
+     */   //printf ("chip is selected\n");
 }
 void spi_chip_deselect (u8 chip_select) {
-    REGS_SPI0->cs = (REGS_SPI0->cs & ~CS_TA);
+    gpio_setPinOutputBool(8, chip_select);
+    //REGS_SPI0->cs = (REGS_SPI0->cs & ~CS_TA);
+        //printf ("chip is deselected\n");
 }
 
 void spi_send_recv(u8 chip_select, u8 *sbuffer, u8 *rbuffer, u32 size) {
