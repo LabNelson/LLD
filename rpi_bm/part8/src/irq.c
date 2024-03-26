@@ -2,7 +2,7 @@
 #include "printf.h"
 #include "entry.h"
 #include "peripherals/irq.h"
-#include "peripherals/aux.h"
+#include "peripherals/auxiliary.h"
 #include "mini_uart.h"
 
 const char entry_error_messages[16][32] = {
