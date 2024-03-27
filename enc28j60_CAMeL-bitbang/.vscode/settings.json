@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "led_display.h": "c",
+        "enc28j60.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "enabled"
+}
