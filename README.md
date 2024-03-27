@@ -1,5 +1,5 @@
 # Accessing Ethernet with baremetal C on RPi4
-The goal of this code is to get the enc28j60 working with CAMeL-View. It will be integrated into a library and used by the CAMeL-View code.
+The goal of this code is to get the enc28j60 working with [CAMeL-View](https://camelview.org/). It will be integrated into a library and used by the CAMeL-View code.
 
 
 ## Background
