@@ -60,7 +60,7 @@ uint8_t deviceIP[4] = { 10, 7, 3, 20 };
 
 // IP Address of the router, whose hardware address we will find using the ARP request
 
-uint8_t routerIP[4] = { 10, 7, 3, 18 };
+uint8_t routerIP[4] = { 10, 7, 3, 42 };
 
 // HELPER FUNCTIONS
 

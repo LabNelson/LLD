@@ -1,179 +1,58 @@
-# -----------------------------------------------------------------------
-#
-#  MAKE-file to build IPANEMA Applikation 
-#
-#  usage:	Befor using please adapt the path regarding to your system-configuration
-#		please adapt in Makefile.(nt linux ...):
-#				IPANEMA_PATH,
-#				SOFTWARE_ROOT_PATH,
-#				SOFTWARE_INCLUDE_PATH,
-#				COMPILER_INCLUDE_PATH, 
-#				COMPILER_INCLUDES
-#		generate	make [ 
-#							mpc5200pxros, debug, all ]
-#		delete		make [clean]
-#
-#  bugs:	changes in any *.h file are not recognized
-# -----------------------------------------------------------------------
+RPI_VERSION ?= 4
 
+BOOTMNT ?= /media/cvdeveloper/bootfs
 
-# -----------------------------------------------------------------------
-#  defs
-# -----------------------------------------------------------------------
+ARMGNU ?= aarch64-linux-gnu
 
+COPS = -DRPI_VERSION=$(RPI_VERSION) -Wall -nostdlib -nostartfiles -ffreestanding \
+	   -Iinclude -mgeneral-regs-only
 
-export TARGET_SPECIFIC_PATH = $(CURDIR)
-export TARGET_SOURCE_PATH = $(CURDIR)/src
-export IPANEMA_FRAMEWORK_PATH = $(abspath $(CURDIR)/../../iXnitionFramework/Ipanema)
-export CEPHES_MATH_PATH = $(abspath $(CURDIR)/../../../CV-Base/cephes-math/cephes-math_dll/src)
+ASMOPS = -Iinclude
 
-SETUP_BUILDFILES = ip_lib.a sim.a sys_layer_mpc5200.a
-SETUPDIR_BASE = ../SetupFiles/development/IPANEMALIB1.1/
-SETUPDIR_BUILDS = $(SETUPDIR_BASE)/lib/mpc5200_pxros_uboot
-SETUPDIR_INCLUDES = $(SETUPDIR_BASE)/include/syslayer/mpc5200_pxros_uboot
+BUILD_DIR = build
+SRC_DIR = src
 
-EXPECTED_BUILD_FILES = $(SETUP_BUILDFILES)
+all : clean kernel8.img armstub
 
-	MAKE_FILE	=	makefile
+clean :
+	rm -rf $(BUILD_DIR) *.img 
 
-#$(abspath ) löst den Pfad so auf, dass keine .. oder // mehr vorkommen
+$(BUILD_DIR)/%_c.o: $(SRC_DIR)/%.c
+	mkdir -p $(@D)
+	$(ARMGNU)-gcc $(COPS) -MMD -c $< -o $@
 
-# -----------------------------------------------------------------------
-#  rules
-# -----------------------------------------------------------------------
+$(BUILD_DIR)/%_s.o: $(SRC_DIR)/%.S
+	mkdir -p $(@D)
+	$(ARMGNU)-gcc $(COPS) -MMD -c $< -o $@
 
-#Das Defaulttarget
-release_double_float:
-	cd $(TARGET_SOURCE_PATH); $(MAKE) -f $(MAKE_FILE)
-	@for F in $(EXPECTED_BUILD_FILES) ; do \
-		if [ ! -e $(CURDIR)/build/release/$$F ]; \
-		then \
-			echo "Build Error: $$F has not been created!"; \
-		fi;\
-	done
+C_FILES = $(wildcard $(SRC_DIR)/*.c)
+ASM_FILES = $(wildcard $(SRC_DIR)/*.S)
+OBJ_FILES = $(C_FILES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%_c.o)
+OBJ_FILES += $(ASM_FILES:$(SRC_DIR)/%.S=$(BUILD_DIR)/%_s.o)
 
-release_double_float_cache:
-	cd $(TARGET_SOURCE_PATH); $(MAKE) activate_cache=1 -f $(MAKE_FILE)
-	@for F in $(EXPECTED_BUILD_FILES) ; do \
-		if [ ! -e $(CURDIR)/build/release_cache/$$F ]; \
-		then \
-			echo "Build Error: $$F has not been created!"; \
-		fi;\
-	done
-	
-release: release_double_float release_double_float_cache release_single_float release_single_float_cache
+DEP_FILES = $(OBJ_FILES:%.o=%.d)
+-include $(DEP_FILES)
 
+kernel8.img: $(SRC_DIR)/linker.ld $(OBJ_FILES)
+	@echo "Building for RPI $(value RPI_VERSION)"
+	@echo "Deploy to $(value BOOTMNT)"
+	@echo ""
+	$(ARMGNU)-ld -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/kernel8.elf $(OBJ_FILES)
+	$(ARMGNU)-objcopy $(BUILD_DIR)/kernel8.elf -O binary kernel8.img
+ifeq ($(RPI_VERSION), 4)
+	cp kernel8.img $(BOOTMNT)/kernel8.img
+else
+	cp kernel8.img $(BOOTMNT)/
+endif
+	cp config.txt $(BOOTMNT)/
+	sync
 
-#Achtung! Beim Target 'all' wird dieses Makefile rekursiv aufgerufen. Einmal mit und ein mal ohne debug
-all:
-	$(MAKE)
-	$(MAKE) debug
-	$(MAKE) release_single_float
-	$(MAKE) debug_single_float
+armstub/build/armstub_s.o: armstub/src/armstub.S
+	mkdir -p $(@D)
+	$(ARMGNU)-gcc $(COPS) -MMD -c $< -o $@
 
-#Achtung! Beim Target 'debug' wird dieses Makefile rekursiv mit dem Parameter 'debug=1' aufgerufen. 
-#Das wird auch vom toplevel Makefile so aufgerufen
-debug_double_float: 
-	cd $(TARGET_SOURCE_PATH); $(MAKE) debug=1 -f $(MAKE_FILE)
-	@for F in $(EXPECTED_BUILD_FILES) ; do \
-		if [ ! -e $(CURDIR)/build/debug/$$F ]; \
-		then \
-			echo "Build Error: $$F has not been created!"; \
-		fi;\
-	done
-
-debug: debug_double_float debug_single_float
-
-release_single_float:
-	#build
-	cd $(TARGET_SOURCE_PATH); $(MAKE) singlefloat=1 -f $(MAKE_FILE)
-	@for F in $(EXPECTED_BUILD_FILES) ; do \
-		if [ ! -e $(CURDIR)/build/singlefloat_release/$$F ]; \
-		then \
-			echo "Build Error: $$F has not been created!"; \
-		fi;\
-	done
-
-release_single_float_cache:
-	#build
-	cd $(TARGET_SOURCE_PATH); $(MAKE) singlefloat=1 activate_cache=1 -f $(MAKE_FILE)
-	@for F in $(EXPECTED_BUILD_FILES) ; do \
-		if [ ! -e $(CURDIR)/build/singlefloat_release_cache/$$F ]; \
-		then \
-			echo "Build Error: $$F has not been created!"; \
-		fi;\
-	done
-
-debug_single_float:
-	cd $(TARGET_SOURCE_PATH); $(MAKE) debug=1 singlefloat=1 -f $(MAKE_FILE)
-	@for F in $(EXPECTED_BUILD_FILES) ; do \
-		if [ ! -e $(CURDIR)/build/singlefloat_debug/$$F ]; \
-		then \
-			echo "Build Error: $$F has not been created!"; \
-		fi;\
-	done
-
-clean_all: 
-	$(MAKE) clean_debug
-	$(MAKE) clean_release
-	$(MAKE) clean_debug_single_float
-	$(MAKE) clean_release_single_float
-
-clean_release: clean_release_double_float clean_release_single_float
-
-clean_release_double_float:
-	cd $(TARGET_SOURCE_PATH); $(MAKE) clean -f $(MAKE_FILE)
-
-clean_release_double_float_cache:
-	cd $(TARGET_SOURCE_PATH); $(MAKE) clean activate_cache=1 -f $(MAKE_FILE)
-
-clean_release_single_float:
-	cd $(TARGET_SOURCE_PATH); $(MAKE) clean singlefloat=1 -f $(MAKE_FILE)
-
-clean_release_single_float_cache:
-	cd $(TARGET_SOURCE_PATH); $(MAKE) clean singlefloat=1 activate_cache=1 -f $(MAKE_FILE)
-
-
-clean_debug: clean_debug_double_float clean_debug_single_float
-
-clean_debug_double_float:
-	cd $(TARGET_SOURCE_PATH); $(MAKE) clean debug=1 -f $(MAKE_FILE)
-
-clean_debug_single_float:
-	cd $(TARGET_SOURCE_PATH); $(MAKE) clean debug=1 singlefloat=1 -f $(MAKE_FILE)
-
-
-#Kopieren der Libs in das Setup Files Verzeichnis
-setupfiles:
-	mkdir -p $(SETUPDIR_BUILDS)/release
-	mkdir -p $(SETUPDIR_BUILDS)/debug
-	mkdir -p $(SETUPDIR_BUILDS)/singlefloat_release
-	mkdir -p $(SETUPDIR_BUILDS)/singlefloat_debug
-	cp $(addprefix build/release/, $(SETUP_BUILDFILES)) $(SETUPDIR_BUILDS)/release
-	cp $(addprefix build/debug/, $(SETUP_BUILDFILES)) $(SETUPDIR_BUILDS)/debug
-	cp $(addprefix build/singlefloat_release/, $(SETUP_BUILDFILES)) $(SETUPDIR_BUILDS)/singlefloat_release
-	cp $(addprefix build/singlefloat_debug/, $(SETUP_BUILDFILES)) $(SETUPDIR_BUILDS)/singlefloat_debug
-	mkdir -p $(SETUPDIR_INCLUDES)
-	cp -r include/syslayer/* $(SETUPDIR_INCLUDES)
-	
-
-help:
-	@echo 1: Funktionen für das aktuelle Betriebssystem
-	@echo	[make]  
-	@echo	[make release]
-	@echo	[make debug]
-	@echo	[make release_single_float]
-	@echo	[make debug_single_float]
-	@echo	[make clean_all]
-	@echo	[make clean_release]
-	@echo	[make clean_debug]
-	@echo	[make clean_release_single_float]
-	@echo	[make clean_debug_single_float]
-	@echo	[make all]
-	@echo	[make setupfiles]
-	@echo -------------------------------------------------------------------------
-	@echo TARGET_SPECIFIC_PATH is set to $(TARGET_SPECIFIC_PATH)
-	@echo TARGET_SOURCE_PATH is set to $(TARGET_SOURCE_PATH)
-	@echo IPANEMA_FRAMEWORK_PATH is set to $(IPANEMA_FRAMEWORK_PATH)
-	@echo CEPHES_MATH_PATH is set to $(CEPHES_MATH_PATH)
-	@echo --------------------------------------------------------------------------
+armstub: armstub/build/armstub_s.o
+	$(ARMGNU)-ld --section-start=.text=0 -o armstub/build/armstub.elf armstub/build/armstub_s.o
+	$(ARMGNU)-objcopy armstub/build/armstub.elf -O binary armstub-new.bin
+	cp armstub-new.bin $(BOOTMNT)/
+	sync
