@@ -1,8 +1,8 @@
 RPI_VERSION ?= 4
 
-BOOTMNT ?= /media/cvdeveloper/bootfs
+BOOTMNT ?= /d
 
-ARMGNU ?= aarch64-linux-gnu
+ARMGNU ?= ../gcc-arm-11.2-2022.02-mingw-w64-i686-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu
 
 COPS = -DRPI_VERSION=$(RPI_VERSION) -Wall -nostdlib -nostartfiles -ffreestanding \
 	   -Iinclude -mgeneral-regs-only
@@ -19,11 +19,11 @@ clean :
 
 $(BUILD_DIR)/%_c.o: $(SRC_DIR)/%.c
 	mkdir -p $(@D)
-	$(ARMGNU)-gcc $(COPS) -MMD -c $< -o $@
+	$(ARMGNU)-gcc.exe $(COPS) -MMD -c $< -o $@
 
 $(BUILD_DIR)/%_s.o: $(SRC_DIR)/%.S
 	mkdir -p $(@D)
-	$(ARMGNU)-gcc $(COPS) -MMD -c $< -o $@
+	$(ARMGNU)-gcc.exe $(COPS) -MMD -c $< -o $@
 
 C_FILES = $(wildcard $(SRC_DIR)/*.c)
 ASM_FILES = $(wildcard $(SRC_DIR)/*.S)
@@ -37,10 +37,10 @@ kernel8.img: $(SRC_DIR)/linker.ld $(OBJ_FILES)
 	@echo "Building for RPI $(value RPI_VERSION)"
 	@echo "Deploy to $(value BOOTMNT)"
 	@echo ""
-	$(ARMGNU)-ld -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/kernel8.elf $(OBJ_FILES)
-	$(ARMGNU)-objcopy $(BUILD_DIR)/kernel8.elf -O binary kernel8.img
+	$(ARMGNU)-ld.exe -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/kernel8.elf $(OBJ_FILES)
+	$(ARMGNU)-objcopy.exe $(BUILD_DIR)/kernel8.elf -O binary kernel8.img
 ifeq ($(RPI_VERSION), 4)
-	cp kernel8.img $(BOOTMNT)/kernel8-rpi4.img
+	cp kernel8.img $(BOOTMNT)/kernel8.img
 else
 	cp kernel8.img $(BOOTMNT)/
 endif
